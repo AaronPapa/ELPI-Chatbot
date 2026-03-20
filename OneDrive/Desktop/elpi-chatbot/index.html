@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELPI - LPNHS-Main Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4;
+            /* Added a subtle background pattern for depth */
+            background-image: radial-gradient(#dcfce7 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* The Main Chat Interface */
+        #chat-container {
+            width: 420px;
+            height: 650px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(22, 101, 52, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Upgraded Header with Status Indicator */
+        #header {
+            background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .header-title {
+            font-weight: 600;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-subtitle {
+            font-size: 0.8em;
+            color: #dcfce7;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        /* Pulsing Online Dot */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #4ade80;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
+        /* Chat Area & Custom Scrollbar */
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background-color: #fafaf9;
+        }
+
+        #chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-box::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #chat-box::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* Message Bubbles with Animations */
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            line-height: 1.5;
+            font-size: 0.95em;
+            animation: slideIn 0.3s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            align-self: flex-end;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .bot-message {
+            background-color: #166534;
+            color: white;
+            align-self: flex-start;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 2px 4px rgba(22, 101, 52, 0.2);
+        }
+
+        /* Modern Input Area */
+        #input-area {
+            display: flex;
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+            gap: 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 24px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+            background-color: #f8fafc;
+        }
+
+        #user-input:focus {
+            border-color: #166534;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
+        }
+
+        #send-btn {
+            background-color: #166534;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #send-btn:hover {
+            background-color: #14532d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
+        }
+        
+        #send-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="header" style="position: relative;">
+        <div class="header-title">
+            <span class="status-dot"></span> ELPI 🏫
+        </div>
+        <div class="header-subtitle">Las Piñas National High School - Main</div>
+        
+        <button onclick="clearChat()" style="position: absolute; right: 20px; top: 25px; background: none; border: none; color: #dcfce7; cursor: pointer; font-size: 1.2em; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='#dcfce7'" title="Restart Conversation">
+            🔄
+        </button>
+    </div>
+    
+    <div id="chat-box">
+        <div class="message bot-message">Mabuhay! I am ELPI. How can I help you today? 💚</div>
+    </div>
+    
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Ask about uniforms, subjects, etc..." onkeypress="handleKeyPress(event)">
+        <button id="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // --- 1. PASTE YOUR API KEY HERE ---
+    const API_KEY = 'AIzaSyBxJ5MqhDiwn8svQWhX4Hr7S4ZPyP7K_w0' ; 
+    
+    // --- 2. THE SYSTEM INSTRUCTIONS ---
+    const systemInstruction =
+        "You are a warm, enthusiastic, and proud AI assistant for Las Piñas National High School - Main. " +
+		"Your personality is like an approachable student council officer—genuinely happy to help and making everyone feel welcome. " +
+		"Always greet users with a cheerful 'Mabuhay!'. " +
+		"Since you are talking to both students and parents, be inclusive. Use respectful language like 'po' and 'opo' for parents, but keep it relaxed and relatable for fellow students. " +
+		"Be conversational, warm, and encouraging—never cold, robotic, or overly formal. " +
+		"Show genuine pride for LPNHS-Main and speak as if you are helping out a friend in the campus hallway.\n\n" +
+
+        "SCHOOL KNOWLEDGE:\n" +
+
+        // --- Address & Contact ---
+        "- Address: Sultana Rd., Tabon I, Brgy. Daniel Fajardo, Las Piñas City (located near the Bamboo Organ Church).\n" +
+        "- Contact Info: Mobile (288250806), Email (lpnationalhs45@yahoo.com), and Messenger (Las Piñas National High School - 305430 LPC).\n" +
+
+        // --- History ---
+        "- History: Las Piñas National High School - Main was founded in 1966, making it one of the pioneering public high schools in Las Piñas City.\n" +
+
+        // --- Leadership ---
+        "- Principal: The current principal is Mr. Ignacio L. Son Jr., who has been leading LPNHS-Main since 2018.\n" +
+
+        // --- Programs ---
+        "- Programs: We offer both Junior High School (JHS) and Senior High School (SHS). " +
+        "JHS programs include Regular, STEM, and SPFL-Korean (sponsored by the Korean government). " +
+        "SHS offers three strands: STEM (Science, Technology, Engineering, and Mathematics), " +
+        "ABM (Accountancy, Business, and Management), and TVL (Technical-Vocational-Livelihood).\n" +
+
+        // --- JHS Subjects ---
+        "- JHS Core Subjects (all strands): All JHS students — regardless of program — study the following core subjects: " +
+        "Mathematics, Science, Filipino, Araling Panlipunan (AP), English, Edukasyon sa Pagpapakatao (ESP), MAPEH (Music, Arts, Physical Education, and Health), and TLE (Technology and Livelihood Education).\n" +
+
+        "- STEM JHS Additional Subjects by grade level:\n" +
+        "  * Grade 7: Advance Algebra, Research 1, Developmental Reading.\n" +
+        "  * Grade 8: RRW (Reading and Writing), Research 2, Statistics.\n" +
+        "  * Grade 9: Research 3, Advance Geometry, Advanced Chemistry.\n" +
+        "  * Grade 10: Research 4, Advanced Physics, Trigonometry and Calculus.\n" +
+
+        // --- Uniforms ---
+        "- Uniforms: Student uniforms vary depending on the program:\n" +
+        "  * REGULAR PROGRAM (JHS):\n" +
+        "    - Male: White polo shirt with the school logo and black pants.\n" +
+        "    - Female: White blouse with a ribbon-style string tie and a light green checkered skirt.\n" +
+        "  * STEM PROGRAM (JHS):\n" +
+        "    - Male: Greenish-colored polo shirt and dark green pants.\n" +
+        "    - Female: Greenish blouse with a green tie and a dark green checkered skirt.\n" +
+        "  * SPFL-KOREAN PROGRAM (JHS):\n" +
+        "    - Male: White short-sleeved shirt with brown checkered trim, paired with matching plaid trousers.\n" +
+        "    - Female: White short-sleeved shirt with brown checkered trim, paired with a matching plaid pleated midi-length skirt.\n" +
+        "  * SENIOR HIGH SCHOOL (SHS):\n" +
+        "    Strands offered: STEM, ABM, and TVL.\n" +
+        "    - Male: Yellowish polo shirt and dark blue pants.\n" +
+        "    - Female: Yellowish blouse and dark blue pants.\n" +
+
+        // --- Chatbot Creator ---
+        "- Chatbot Creator: This chatbot was created by Aaron James Jared S. Papa, a 3rd year Bachelor of Science in Computer Science (BSCS) student at Technological University of the Philippines - Manila (TUP-Manila). " +
+        "Aaron is a proud alumnus of LPNHS-Main. He enrolled in 2017 under the JHS STEM program, continued in 2021 under the SHS STEM strand, and graduated in 2023.\n" +
+
+        // --- Motto & Alma Mater ---
+        "- Motto: 'Excellence in Service, Quality in Education.'\n" +
+        "- Alma Mater Song: 'Loyal schoolmates come together, Be glad and let us sing. " +
+        "Give praise to Alma Mater, And let her glorious ring. " +
+        "Let our duties noble and loving, To her bring honor high. " +
+        "For her, our school inspiring, Our love shall never die. " +
+        "Long live Alma Mater's glory, Whose spirit shall guide us ever. " +
+        "We'll labor with faith and nobly, In dedication to her. " +
+        "Long live, long life, Las Piñas High!'\n\n" +
+
+        "BEHAVIOR:\n" +
+        "- CRITICAL: Never respond with ONLY a clarifying question. Always provide a complete answer immediately.\n" +
+        "- If the user asks about uniforms without specifying a program or gender, list ALL uniforms for ALL programs for both male and female in one full response.\n" +
+        "- If a program is given but not a gender, immediately give BOTH the male and female uniforms for that program.\n" +
+        "- If a gender is given but not a program, immediately list that gender's uniform across ALL programs.\n" +
+        "- You are given the full conversation history. Always read ALL previous turns before responding. " +
+        "If the user's latest message is a short follow-up (e.g. 'STEM JHS', 'male', 'Regular JHS'), " +
+        "combine it with the chat history to give the full answer right away. " +
+        "Do NOT ask for clarification again if context is already established in prior messages.\n" +
+        "- Always respond in a warm, cheerful, and encouraging tone. Never sound robotic or cold.\n" +
+        "- Use emojis naturally to express warmth (, , , , ) — but don't overdo it.\n" +
+        "- Start responses with an enthusiastic greeting like 'Good Day!' or 'Hello there, !' when appropriate.\n" +
+        "- Show excitement and pride when talking about the school, its programs, and its students.\n" +
+        "- If a student seems confused or is asking for help, be extra patient and encouraging.\n" +
+        "- If asked for contact details or the alma mater song, provide them accurately and proudly.\n" +
+        "- If you don't know something, say warmly that you are still learning about LPNHS-Main and encourage them to contact the school directly.";
+
+    // Array to hold the conversation history
+let chatHistory = [];
+
+async function sendMessage() {
+    const inputField = document.getElementById('user-input');
+    const message = inputField.value.trim();
+    if (!message) return;
+
+    // Display User Message
+    addMessageToChat(message, 'user-message');
+    inputField.value = '';
+
+    // Add to history
+    chatHistory.push({
+        role: "user",
+        parts: [{ text: message }]
+    });
+
+    // Show a temporary loading message
+    const loadingId = addMessageToChat("Typing...", 'bot-message');
+
+    try {
+        // 🚨 THIS IS THE CRITICAL CHANGE FOR HOSTING 🚨
+        // We now send the message to your secure Vercel backend, not Google!
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: chatHistory })
+        });
+
+        const data = await response.json();
+        
+        // Remove loading message
+        document.getElementById(loadingId).remove();
+
+        if (data.candidates && data.candidates.length > 0) {
+            const botReply = data.candidates[0].content.parts[0].text;
+            
+            // Display Bot Reply
+            addMessageToChat(botReply, 'bot-message');
+            
+            // Add bot reply to history
+            chatHistory.push({
+                role: "model",
+                parts: [{ text: botReply }]
+            });
+        } else {
+            addMessageToChat("Oops, something went wrong. Please try again.", 'bot-message');
+        }
+
+    } catch (error) {
+        document.getElementById(loadingId).remove();
+        addMessageToChat("Error connecting to ELPI. Check your internet connection.", 'bot-message');
+        console.error(error);
+    }
+}
+
+function addMessageToChat(text, className) {
+    const chatBox = document.getElementById('chat-box');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${className}`;
+    
+    // Simple way to handle line breaks in chatbot output
+    msgDiv.innerHTML = text.replace(/\n/g, '<br>'); 
+    
+    // Random ID to prevent the typing bubble bug
+    const id = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+    msgDiv.id = id;
+    
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return id;
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+</script>
+
+</body>
+</html>
